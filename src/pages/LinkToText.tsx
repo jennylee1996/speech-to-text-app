@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import speechToTextService from '../services/api'
+import config from '../config'
 
 const LinkToText = () => {
   const [url, setUrl] = useState('')
@@ -20,7 +22,7 @@ const LinkToText = () => {
     }
   }
   
-  const handleTranscribe = () => {
+  const handleTranscribe = async () => {
     if (!url.trim()) {
       setError('Please enter a URL')
       return
@@ -34,14 +36,29 @@ const LinkToText = () => {
     setIsProcessing(true)
     setError('')
     
-    // This is a placeholder for the actual transcription API call
-    // In a real implementation, you would send the URL to a backend service
-    setTimeout(() => {
-      setTranscript(
-        "This is a sample transcript. In a real application, this would be the transcribed text from the audio or video at the provided URL. The transcript would include all spoken words with timestamps and speaker identification if available."
-      )
-      setIsProcessing(false)
-    }, 3000)
+    try {
+      // Use the transcribeLink method with language code from config
+      const response = await speechToTextService.transcribeLink(url, config.defaultLanguage);
+      console.log('API response:', response);
+      
+      // Check if the text field exists in the response
+      if (response && response.text) {
+        // Set the transcript from the text field
+        setTranscript(response.text);
+        setIsProcessing(false);
+      } else if (response && response.transcript) {
+        // Fall back to transcript field if it exists
+        setTranscript(response.transcript);
+        setIsProcessing(false);
+      } else {
+        setError('No transcription text found in the response');
+        setIsProcessing(false);
+      }
+    } catch (error: any) {
+      console.error('Error processing URL:', error);
+      setError(error.response?.data?.message || 'Error processing URL for transcription');
+      setIsProcessing(false);
+    }
   }
   
   const handleReset = () => {

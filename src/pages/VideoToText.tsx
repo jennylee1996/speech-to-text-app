@@ -1,10 +1,12 @@
 import { useState, useRef } from 'react'
+import speechToTextService from '../services/api'
 
 const VideoToText = () => {
   const [file, setFile] = useState<File | null>(null)
   const [isUploading, setIsUploading] = useState(false)
   const [transcript, setTranscript] = useState('')
   const [error, setError] = useState('')
+  const [transcriptionId, setTranscriptionId] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -49,14 +51,53 @@ const VideoToText = () => {
     setIsUploading(true)
     setError('')
     
-    // This is a placeholder for the actual transcription API call
-    // In a real implementation, you would send the file to a backend service
-    setTimeout(() => {
-      setTranscript(
-        "This is a sample transcript. In a real application, this would be the transcribed text from the uploaded video file. The transcript would include all spoken words from the video with timestamps and speaker identification if available."
-      )
-      setIsUploading(false)
-    }, 3000)
+    try {
+      // Send the file to the backend service for transcription
+      const response = await speechToTextService.transcribeVideo(file);
+      
+      // Check if the response has the text field (from the backend)
+      if (response.text) {
+        setTranscript(response.text);
+        setIsUploading(false);
+      }
+      // Check if the transcription is already completed
+      else if (response.status === 'completed' && response.transcript) {
+        setTranscript(response.transcript);
+        setIsUploading(false);
+      } else {
+        // Store the transcription ID returned from the backend
+        setTranscriptionId(response.transcriptionId);
+        
+        // Check transcription status periodically
+        checkTranscriptionStatus(response.transcriptionId);
+      }
+    } catch (error: any) {
+      setError(error.response?.data?.message || 'Error uploading file for transcription');
+      setIsUploading(false);
+    }
+  }
+  
+  const checkTranscriptionStatus = async (id: string) => {
+    try {
+      const statusResponse = await speechToTextService.getTranscriptionStatus(id);
+      
+      if (statusResponse.status === 'completed') {
+        // Transcription is complete, fetch the result
+        const resultResponse = await speechToTextService.getTranscriptionResult(id);
+        setTranscript(resultResponse.transcript);
+        setIsUploading(false);
+      } else if (statusResponse.status === 'failed') {
+        // Transcription failed
+        setError('Transcription failed: ' + (statusResponse.error || 'Unknown error'));
+        setIsUploading(false);
+      } else {
+        // Transcription is still in progress, check again after a delay
+        setTimeout(() => checkTranscriptionStatus(id), 2000);
+      }
+    } catch (error: any) {
+      setError(error.response?.data?.message || 'Error checking transcription status');
+      setIsUploading(false);
+    }
   }
 
   const handleReset = () => {

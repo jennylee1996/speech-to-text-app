@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import speechToTextService from '../services/api'
 
 const LiveTranscription = () => {
   const [isRecording, setIsRecording] = useState(false)
@@ -32,7 +33,7 @@ const LiveTranscription = () => {
     )
   }
   
-  const startRecording = () => {
+  const startRecording = async () => {
     setIsRecording(true)
     setIsProcessing(true)
     setErrorMessage('')
@@ -44,13 +45,16 @@ const LiveTranscription = () => {
     // Start timer
     timerRef.current = window.setInterval(updateTimer, 1000)
     
-    // This is a placeholder for actual speech recognition logic
-    // In a real app, you would initialize the Web Speech API here
-    
-    // Simulate receiving transcription after a delay
-    setTimeout(() => {
-      setTranscript('')
+    try {
+      // Start live transcription with backend service
+      await speechToTextService.startLiveTranscription();
       setIsProcessing(false)
+      
+      // In a real implementation, you would establish a WebSocket connection
+      // to receive transcription results in real-time from the backend
+      
+      // This is a mock implementation for demo purposes
+      setTranscript('')
       
       // Simulate receiving transcript in chunks
       const sentences = [
@@ -70,10 +74,20 @@ const LiveTranscription = () => {
           clearInterval(addTextInterval)
         }
       }, 2000)
-    }, 1500)
+    } catch (error: any) {
+      setErrorMessage(error.response?.data?.message || 'Error starting live transcription');
+      setIsProcessing(false);
+      setIsRecording(false);
+      
+      // Clear timer
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+    }
   }
   
-  const stopRecording = () => {
+  const stopRecording = async () => {
     setIsRecording(false)
     
     // Clear timer
@@ -82,7 +96,12 @@ const LiveTranscription = () => {
       timerRef.current = null
     }
     
-    // In a real app, you would stop the speech recognition here
+    try {
+      // Stop the live transcription with backend service
+      await speechToTextService.stopLiveTranscription();
+    } catch (error: any) {
+      setErrorMessage(error.response?.data?.message || 'Error stopping live transcription');
+    }
   }
   
   const clearTranscription = () => {
