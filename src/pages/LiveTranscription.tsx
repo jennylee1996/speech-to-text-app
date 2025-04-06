@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from 'react'
-import speechToTextService from '../services/api'
 import Spinner from '../components/Spinner'
 
 const LiveTranscription = () => {
@@ -9,6 +8,8 @@ const LiveTranscription = () => {
   const [isProcessing, setIsProcessing] = useState(false)
   const recordingTimeRef = useRef(0)
   const timerRef = useRef<number | null>(null)
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
+  const localStreamRef = useRef<MediaStream | null>(null)
   const [recordingTime, setRecordingTime] = useState('00:00')
   
   // This would be where you connect to the Web Speech API in a real implementation
@@ -47,36 +48,44 @@ const LiveTranscription = () => {
     timerRef.current = window.setInterval(updateTimer, 1000)
     
     try {
-      // Start live transcription with backend service
-      await speechToTextService.startLiveTranscription();
-      setIsProcessing(false)
-      
-      // In a real implementation, you would establish a WebSocket connection
-      // to receive transcription results in real-time from the backend
-      
-      // This is a mock implementation for demo purposes
-      setTranscript('')
-      
-      // Simulate receiving transcript in chunks
-      const sentences = [
-        "Hello, this is a live transcription test.",
-        " The speech recognition is working as expected.",
-        " This is a demonstration of how real-time transcription would work.",
-        " Words appear as they are spoken by the user.",
-        " In a real application, this would be powered by the Web Speech API or a similar service."
-      ]
-      
-      let i = 0
-      const addTextInterval = setInterval(() => {
-        if (i < sentences.length) {
-          setTranscript(prev => prev + sentences[i])
-          i++
-        } else {
-          clearInterval(addTextInterval)
+      // Request microphone access and initialize MediaRecorder
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      localStreamRef.current = stream;
+
+      const recorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = recorder;
+
+      recorder.ondataavailable = async (event: BlobEvent) => {
+        if (event.data && event.data.size > 0) {
+          try {
+            const response = await fetch('/api/liveTranscribe', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/octet-stream' },
+              body: event.data
+            });
+            const result = await response.text();
+            console.log('Audio chunk response:', result);
+          } catch (error) {
+            console.error('Error sending audio chunk:', error);
+          }
         }
-      }, 2000)
+      };
+
+      recorder.onstart = () => {
+        setIsProcessing(false);
+        console.log('Recording started');
+      };
+
+      recorder.onstop = () => {
+        console.log('Recording stopped');
+        stream.getTracks().forEach(track => track.stop());
+      };
+
+      // Start recording with 1 second time slices
+      recorder.start(1000);
+      setTranscript('');
     } catch (error: any) {
-      setErrorMessage(error.response?.data?.message || 'Error starting live transcription');
+      setErrorMessage(error?.message || 'Error starting live transcription');
       setIsProcessing(false);
       setIsRecording(false);
       
@@ -98,10 +107,11 @@ const LiveTranscription = () => {
     }
     
     try {
-      // Stop the live transcription with backend service
-      await speechToTextService.stopLiveTranscription();
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+        mediaRecorderRef.current.stop();
+      }
     } catch (error: any) {
-      setErrorMessage(error.response?.data?.message || 'Error stopping live transcription');
+      setErrorMessage(error?.message || 'Error stopping live transcription');
     }
   }
   
