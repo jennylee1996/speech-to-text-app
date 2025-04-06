@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import speechToTextService from '../services/api'
 import config from '../config'
+import Spinner from '../components/Spinner'
 
 const LinkToText = () => {
   const [url, setUrl] = useState('')
@@ -110,7 +111,14 @@ const LinkToText = () => {
                   : 'bg-blue-600 text-white hover:bg-blue-700'
               } transition-colors`}
             >
-              {isProcessing ? 'Processing...' : 'Transcribe Content'}
+              {isProcessing ? (
+                <span className="flex items-center justify-center">
+                  <Spinner size="sm" color="text-white" />
+                  <span className="ml-2">Processing...</span>
+                </span>
+              ) : (
+                'Transcribe Content'
+              )}
             </button>
           </div>
         </>

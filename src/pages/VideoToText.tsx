@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react'
 import speechToTextService from '../services/api'
+import Spinner from '../components/Spinner'
 
 const VideoToText = () => {
   const [file, setFile] = useState<File | null>(null)
@@ -161,7 +162,14 @@ const VideoToText = () => {
                   : 'bg-blue-600 text-white hover:bg-blue-700'
               } transition-colors`}
             >
-              {isUploading ? 'Processing...' : 'Transcribe Video'}
+              {isUploading ? (
+                <span className="flex items-center">
+                  <Spinner size="sm" color="text-white" />
+                  <span className="ml-2">Processing...</span>
+                </span>
+              ) : (
+                'Transcribe Video'
+              )}
             </button>
           </div>
         </>

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import speechToTextService from '../services/api'
+import Spinner from '../components/Spinner'
 
 const LiveTranscription = () => {
   const [isRecording, setIsRecording] = useState(false)
@@ -176,7 +177,10 @@ const LiveTranscription = () => {
             <div className="bg-gray-50 border border-gray-200 rounded-md p-4 min-h-[200px] max-h-[400px] overflow-y-auto">
               {isProcessing ? (
                 <div className="flex items-center justify-center h-full">
-                  <div className="animate-pulse text-gray-500">Listening...</div>
+                  <div className="flex flex-col items-center">
+                    <Spinner size="md" color="text-blue-600" />
+                    <p className="mt-2 text-gray-500">Listening...</p>
+                  </div>
                 </div>
               ) : transcript ? (
                 <p className="whitespace-pre-line">{transcript}</p>

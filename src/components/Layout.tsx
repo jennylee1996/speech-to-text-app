@@ -62,7 +62,7 @@ const Layout = () => {
       
       <footer className="bg-gray-800 text-white py-4">
         <div className="container mx-auto px-4 text-center">
-          <p>© {new Date().getFullYear()} Speech to Text App</p>
+          <p>© {new Date().getFullYear()} Speech to Text App by Lee Hoi Ying 22049482S</p>
         </div>
       </footer>
     </div>
