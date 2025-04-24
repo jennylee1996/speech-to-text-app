@@ -93,12 +93,9 @@ const LinkToText = () => {
             {error && <p className="text-red-500 mb-4">{error}</p>}
             
             <div className="text-sm text-gray-600 mb-6">
-              <p>Supported formats:</p>
+              <p>Supported format:</p>
               <ul className="list-disc list-inside ml-2">
-                <li>YouTube videos</li>
-                <li>MP4, WebM videos</li>
-                <li>MP3, WAV, FLAC audio files</li>
-                <li>Podcast episodes</li>
+                <li>YouTube Link</li>
               </ul>
             </div>
             

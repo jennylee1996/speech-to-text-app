@@ -1,6 +1,5 @@
 import axios from 'axios';
 import config from '../config';
-import mockSpeechToTextService from './mockApi';
 
 // Create axios instance with default config
 const apiClient = axios.create({
@@ -21,7 +20,7 @@ apiClient.interceptors.response.use(
 );
 
 // API implementation
-const realSpeechToTextService = {
+const speechToTextService = {
   // Upload video file for transcription
   transcribeVideo: async (videoFile: File, languageCode: string = 'en') => {
     const formData = new FormData();
@@ -45,6 +44,12 @@ const realSpeechToTextService = {
           'Content-Type': 'application/json',
         }
       });
+      
+      // Check if response has error status
+      if (response.data.status === 'error') {
+        throw new Error(response.data.error);
+      }
+      
       return response.data;
     } catch (error) {
       console.error('Error transcribing URL:', error);
@@ -63,6 +68,12 @@ const realSpeechToTextService = {
           'Content-Type': 'application/json',
         }
       });
+      
+      // Check if response has error status
+      if (response.data.status === 'error') {
+        throw new Error(response.data.error);
+      }
+      
       return response.data;
     } catch (error) {
       console.error('Error transcribing link:', error);
@@ -114,7 +125,6 @@ const realSpeechToTextService = {
   }
 };
 
-// Export either the real or mock service based on configuration
-const speechToTextService = config.useMockData ? mockSpeechToTextService : realSpeechToTextService;
+
 
 export default speechToTextService; 
